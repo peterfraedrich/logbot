@@ -1,0 +1,1 @@
+from logbot import AutoLogger
