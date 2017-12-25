@@ -1,41 +1,27 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 from __future__ import print_function
-from functools import wraps
-import time
-from datetime import datetime
+from logbot import AutoLogger
 import logging
 import sys
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-log = logging.getLogger('logbot')
+config = {
+    'stream' : sys.stdout,
+    'level' : logging.DEBUG
+}
 
-def logged(fn):
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        rtn = fn(*args, **kwargs)
-        msg = '{}:{}.{}:params({}, {}):etime({})'.format(
-                datetime.now(),
-                fn.__name__,
-                '__call__',
-                args,
-                kwargs,
-                time.time() - start
-            )
-        print(msg)
-        log.debug(msg)
-        return rtn
-    return wrapper
+print('instantiating new logbot class')
+log = AutoLogger(app_name='testapp', config=config)
+
+@log.autolog
+def test(a, b, c, d, *args, **kwargs):
+    return 'hello world'
+
+@log.autolog
+def extest():
+    raise TypeError('wat')
+    return None
 
 
-
-@logged
-def something(hello):
-
-    print(hello)
-
-    return hello
-
-
-something('whats up')
+test('a', 'b', 'c', 'd', 'e', 'f', g='g', h='h')
+extest()

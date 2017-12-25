@@ -11,23 +11,14 @@ class AutoLogger:
     Automatically generates logs
     '''
 
-    def __init__(self, app_name='app.logbot'):
+    def __init__(self, app_name='app.logbot', config={}):
         '''
         @param app_name str
         instantiate a new instance of the logger
         '''
+        logging.basicConfig(**config)
         self._log = logging.getLogger(app_name)
         return
-
-
-    def configure(self, config_dict):
-        '''
-        @param config_dict dict
-        set logging configurations
-        '''
-        logging.basicConfig(**config_dict)
-        return
-
 
     def autolog(self, fn):
         '''
@@ -41,12 +32,15 @@ class AutoLogger:
         '''
         @wraps(fn)
         def wrapper(*args, **kwargs):
+            self._log.debug('function({}):args({}):kwargs({})'.format(fn.__name__, args, kwargs))
             start = time.time()
+            rtn = None
             try:
                 rtn = fn(*args, **kwargs)
             except Exception as e:
-                ex = e
-            msg = ''
+                self._log.error('function({}):exception({})'.format(fn.__name__, e))
+            self._log.debug('function({}):return({})'.format(fn.__name__, rtn))
+            self._log.debug('function({}):execution_time_ms({})'.format(fn.__name__, round(float(time.time() - start), 8)))
             return rtn
         return wrapper
 
