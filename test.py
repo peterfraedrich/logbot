@@ -25,3 +25,5 @@ def extest():
 
 test('a', 'b', 'c', 'd', 'e', 'f', g='g', h='h')
 extest()
+
+log.debug('hello')

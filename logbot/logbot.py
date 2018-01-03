@@ -5,11 +5,15 @@ import time
 from datetime import datetime
 import logging
 from sys import stdout
+from collections import defaultdict
+from decimal import Decimal, ROUND_UP
 
 class AutoLogger:
     '''
     Automatically generates logs
     '''
+
+    FORMAT = 'AUTOLOG:function({d[fn]}):args({d[arg]}):kwargs({d[kwarg]}):ex_time_ms({d[xtime]}):return({d[return]}):exception({d[exception]})'
 
     def __init__(self, app_name='app.logbot', config={}):
         '''
@@ -20,30 +24,36 @@ class AutoLogger:
         self._log = logging.getLogger(app_name)
         return
 
+    def _format(self, **kwargs):
+        d = defaultdict(str, **kwargs)
+        return str(self.FORMAT).format(d=defaultdict(str, **kwargs))
+
+    def _xtime(self, start):
+        start = Decimal(str(start)).quantize(Decimal('.000001'), rounding=ROUND_UP)
+        end = Decimal(str(time.time())).quantize(Decimal('.000001'), rounding=ROUND_UP)
+        return end - start
+
+    def setformat(self, format_str):
+        self.FORMAT = format_str
+        return
+
     def autolog(self, fn):
         '''
         function decorator that catches exceptions
         and loggs function calls automatically
-        TODO:
-            - set msg format
-            - clean up exception handling
-            - ???
-            - profit
         '''
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            self._log.debug('function({}):args({}):kwargs({})'.format(fn.__name__, args, kwargs))
             start = time.time()
             rtn = None
             try:
                 rtn = fn(*args, **kwargs)
             except Exception as e:
-                self._log.error('function({}):exception({})'.format(fn.__name__, e))
-            self._log.debug('function({}):return({})'.format(fn.__name__, rtn))
-            self._log.debug('function({}):execution_time_ms({})'.format(fn.__name__, round(float(time.time() - start), 8)))
+                self._log.error(self._format(fn=fn.__name__, xtime=self._xtime(start), rtn=str(rtn), exception=str(e), arg=args, kwarg=kwargs))
+                return e
+            self._log.debug(self._format(fn=fn.__name__, xtime=self._xtime(start), rtn=str(rtn), arg=args, kwarg=kwargs))
             return rtn
         return wrapper
-
 
     ### public methods for user-supplied logging messages
     ### without calling logging.getLogger()
